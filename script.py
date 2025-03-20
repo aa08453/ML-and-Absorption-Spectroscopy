@@ -50,8 +50,61 @@ def add_samples_from_csv(csv_files, hdf5_file, data_type):
 
         for csv_file in csv_files:
             print(f"Processing: {csv_file}")
+            
+            if data_type == "1":  # RGB Sensor Data
+                df = pd.read_csv(csv_file)
+                for _, row in df.iterrows():
+                    timestamp = str(row["Timestamp"]).replace("Time, ", "")
+                    group_name = f"/samples/{timestamp}"
 
-            if data_type == "3":  # AS7341 10-Channel Sensor Data
+                    if group_name in hdf5_file:
+                        print(f"Skipping duplicate sample: {timestamp}")
+                        continue
+
+                    R, G, B = row["R"], row["G"], row["B"]
+                    wavelengths, absorption, transmission = rgb_to_spectrometer(R, G, B)
+
+                    sample_group = hdf5_file.create_group(group_name)
+                    sample_group.create_dataset("Wavelengths", data=wavelengths)
+                    sample_group.create_dataset("Absorption", data=absorption)
+                    sample_group.create_dataset("Transmission", data=transmission)
+
+                    sample_group.attrs["Timestamp"] = timestamp
+                    add_metadata(sample_group)
+
+                    print(f"Added RGB sample: {timestamp}")
+
+            elif data_type == "2":  # Spectrophotometer Data
+                with open(csv_file, 'r') as file:
+                    lines = file.readlines()
+                    timestamp = lines[1].split("\t")[-1].strip().replace("Time, ", "")
+
+                df = pd.read_csv(csv_file, skiprows=11, sep=r'\s*,\s*', engine="python",
+                                 names=["Wavelength", "Absorption", "Transmission"])
+
+                try:
+                    wavelengths = df["Wavelength"].astype(float).values
+                    absorption = df["Absorption"].astype(float).values
+                    transmission = df["Transmission"].astype(float).values
+                except ValueError as e:
+                    print(f"Error processing {csv_file}: Could not convert data to float. {e}")
+                    continue
+
+                group_name = f"/samples/{timestamp}"
+
+                if group_name in hdf5_file:
+                    del hdf5_file[group_name]
+
+                sample_group = hdf5_file.create_group(group_name)
+                sample_group.create_dataset("Wavelengths", data=wavelengths)
+                sample_group.create_dataset("Absorption", data=absorption)
+                sample_group.create_dataset("Transmission", data=transmission)
+                sample_group.attrs["Timestamp"] = timestamp
+
+                add_metadata(sample_group)
+                print(f"Added spectrophotometer sample: {timestamp}")
+
+            elif data_type == "3":  # AS7341 10-Channel Sensor Data
                 df = pd.read_csv(csv_file)
                 for _, row in df.iterrows():
                     timestamp = str(row["time"])  # Extract timestamp
