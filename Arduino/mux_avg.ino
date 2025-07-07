@@ -6,35 +6,74 @@
 #define S1 3
 #define S2 4
 #define S3 5
-
-// LED control pins (optional)
-#define B 13
-#define G 12
-#define R 11
+//#define led 
 
 Adafruit_AS7341 sensor1;
 Adafruit_AS7341 sensor2;
 
+long n_samples=0;
+long avg_f1=0;
+long avg_f2=0;
+long avg_f3=0;
+long avg_f4=0;
+long avg_f5=0;
+long avg_f6=0;
+long avg_f7=0;
+long avg_f8=0;
+long avg_clear=0;
+long avg_nir=0;
+
+long sum_f1=0;
+long sum_f2=0;
+long sum_f3=0;
+long sum_f4=0;
+long sum_f5=0;
+long sum_f6=0;
+long sum_f7=0;
+long sum_f8=0;
+long sum_clear=0;
+long sum_nir=0;
+
+long f1, f2, f3, f4, f5, f6, f7, f8, clear, nir;
+
+const int channels = 10;
+int readings[channels][2];  
+
 void setup() {
   Serial.begin(115200);
 
-  // Set mux control pins as outputs
+  
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
   pinMode(S2, OUTPUT);
   pinMode(S3, OUTPUT);
 
-  // Set optional RGB LED pins
-  pinMode(R, OUTPUT);
-  pinMode(G, OUTPUT);
-  pinMode(B, OUTPUT);
+  selectMuxChannel(1);  
+  initSensor(sensor1, "Sensor#1");
+  sensor1.enableLED(false);
 
-  digitalWrite(R, HIGH);
-  digitalWrite(G, HIGH);
-  digitalWrite(B, LOW);
+  selectMuxChannel(3);  
+  initSensor(sensor2, "Sensor#2");
+  sensor2.enableLED(true);
+
+//   for (int i = 0; i < channels; i++) {
+//     readings[i][0] = i;  // channel number
+//     readings[i][1] =;  
+//   }
+
+//   // Print the values
+//   for (int i = 0; i < channels; i++) {
+//     Serial.print("Channel ");
+//     Serial.print(readings[i][0]);
+//     Serial.print(": ");
+//     Serial.println(readings[i][1]);
+//   }
+// }
+
+
 }
 
-// Select one of the 16 mux channels (0–15)
+
 void selectMuxChannel(int channel) {
   digitalWrite(S0, bitRead(channel, 0));
   digitalWrite(S1, bitRead(channel, 1));
@@ -43,7 +82,6 @@ void selectMuxChannel(int channel) {
   delay(150); // wait for sensor to power up
 }
 
-// Initialize and read a sensor
 bool readSensor(Adafruit_AS7341 &sensor, const char* label) {
   
   if (!sensor.readAllChannels()) {
@@ -68,56 +106,6 @@ bool readSensor(Adafruit_AS7341 &sensor, const char* label) {
   return true;
 }
 
-long f1, f2, f3, f4, f5, f6, f7, f8, clear, nir;
-
-void average(Adafruit_AS7341 &sensor){
-  int count = 20;
-  f1 = f2 = f3 = f4 = f5 = f6 = f7 = f8 = clear = nir = 0;
-
-  for (int i = 0; i < count; i++) {
-    if (!sensor.readAllChannels()) {
-      Serial.println("Error reading sensor during averaging.");
-      continue; // skip this reading if it fails
-    }
-
-    f1 += sensor.getChannel(AS7341_CHANNEL_415nm_F1);
-    f2 += sensor.getChannel(AS7341_CHANNEL_445nm_F2);
-    f3 += sensor.getChannel(AS7341_CHANNEL_480nm_F3);
-    f4 += sensor.getChannel(AS7341_CHANNEL_515nm_F4);
-    f5 += sensor.getChannel(AS7341_CHANNEL_555nm_F5);
-    f6 += sensor.getChannel(AS7341_CHANNEL_590nm_F6);
-    f7 += sensor.getChannel(AS7341_CHANNEL_630nm_F7);
-    f8 += sensor.getChannel(AS7341_CHANNEL_680nm_F8);
-    clear += sensor.getChannel(AS7341_CHANNEL_CLEAR);
-    nir += sensor.getChannel(AS7341_CHANNEL_NIR);
-
-    
-  }
-
-  f1 /= count;
-  f2 /= count;
-  f3 /= count;
-  f4 /= count;
-  f5 /= count;
-  f6 /= count;
-  f7 /= count;
-  f8 /= count;
-  clear /= count;
-  nir /= count;
-
-  Serial.print("Averaged values: ");
-  Serial.print("415nm: "); Serial.print(f1); Serial.print(", ");
-  Serial.print("445nm: "); Serial.print(f2); Serial.print(", ");
-  Serial.print("480nm: "); Serial.print(f3); Serial.print(", ");
-  Serial.print("515nm: "); Serial.print(f4); Serial.print(", ");
-  Serial.print("555nm: "); Serial.print(f5); Serial.print(", ");
-  Serial.print("590nm: "); Serial.print(f6); Serial.print(", ");
-  Serial.print("630nm: "); Serial.print(f7); Serial.print(", ");
-  Serial.print("680nm: "); Serial.print(f8); Serial.print(", ");
-  Serial.print("Clear: "); Serial.print(clear); Serial.print(", ");
-  Serial.print("NIR: "); Serial.println(nir);
-}
-
 
 void initSensor(Adafruit_AS7341 &sensor, const char* label){
   if (!sensor.begin()) {
@@ -125,13 +113,16 @@ void initSensor(Adafruit_AS7341 &sensor, const char* label){
     Serial.println(label);
     return false;
   }
-  sensor.setATIME(100);
-  sensor.setASTEP(999);
-  sensor.setGain(AS7341_GAIN_256X);
-  sensor.setLEDCurrent(4);
+  sensor.setATIME(74); // integration cycles
+  sensor.setASTEP(499); //steps per cycle
+  sensor.setGain(AS7341_GAIN_64X); 
+  sensor.setLEDCurrent(50);
+
+  //Integration Time (ms)=(ASTEP+1)×(ATIME+1)×2.78μs = (999+1)×(100+1)×2.78μs = 280ms delay!!!! //clock cycle duration per step
 }
 
 void difference(Adafruit_AS7341 &sensor1, Adafruit_AS7341 &sensor2){
+
   Serial.print("Difference:");
   Serial.print(abs((int)sensor1.getChannel(AS7341_CHANNEL_415nm_F1) - (int)sensor2.getChannel(AS7341_CHANNEL_415nm_F1)));
   Serial.print(",");
@@ -155,19 +146,85 @@ void difference(Adafruit_AS7341 &sensor1, Adafruit_AS7341 &sensor2){
   Serial.println("");
   }
 
+int shift=4;
 
 void loop() {
-  selectMuxChannel(14);  
-  initSensor(sensor1, "Sensor#1");
-  average(sensor1);
-  sensor1.enableLED(false);
+  
+   
+  if (!sensor1.readAllChannels()) {
+    Serial.print("Error reading\n ");
+    //Serial.println(label);
+    return false;
+  }
+  
+    f1 = sensor1.getChannel(AS7341_CHANNEL_415nm_F1);
+    f2 = sensor1.getChannel(AS7341_CHANNEL_445nm_F2);
+    f3 = sensor1.getChannel(AS7341_CHANNEL_480nm_F3);
+    f4 = sensor1.getChannel(AS7341_CHANNEL_515nm_F4);
+    f5 = sensor1.getChannel(AS7341_CHANNEL_555nm_F5);
+    f6 = sensor1.getChannel(AS7341_CHANNEL_590nm_F6);
+    f7 = sensor1.getChannel(AS7341_CHANNEL_630nm_F7);
+    f8 = sensor1.getChannel(AS7341_CHANNEL_680nm_F8);
+    clear = sensor1.getChannel(AS7341_CHANNEL_CLEAR);
+    nir = sensor1.getChannel(AS7341_CHANNEL_NIR);
+ 
+  
+  // Serial.print("values: ");
+  // Serial.print("415nm: "); Serial.print(f1); Serial.print(", ");
+  // Serial.print("445nm: "); Serial.print(f2); Serial.print(", ");
+  // Serial.print("480nm: "); Serial.print(f3); Serial.print(", ");
+  // Serial.print("515nm: "); Serial.print(f4); Serial.print(", ");
+  // Serial.print("555nm: "); Serial.print(f5); Serial.print(", ");
+  // Serial.print("590nm: "); Serial.print(f6); Serial.print(", ");
+  // Serial.print("630nm: "); Serial.print(f7); Serial.print(", ");
+  // Serial.print("680nm: "); Serial.print(f8); Serial.print(", ");
+  // Serial.print("Clear: "); Serial.print(clear); Serial.print(", ");
+  // Serial.print("NIR: "); Serial.println(nir);
 
-  // selectMuxChannel(15);  
-  // initSensor(sensor2, "Sensor#2");
-  // sensor2.enableLED(true);
+ sum_f1+=f1;
+ sum_f2+=f2;
+ sum_f3+=f3;
+ sum_f4+=f4;
+ sum_f5+=f5;
+ sum_f6+=f6;
+ sum_f7+=f7;
+ sum_f8+=f8;
+ sum_clear+=clear;
+ sum_nir+=nir;
 
-  // difference(sensor1, sensor2);
+n_samples++;
+  
 
-  Serial.println("-----------------------------");
+  if(n_samples==16){
+
+    avg_f1=sum_f1>>shift;
+    avg_f2=sum_f2>>shift;
+    avg_f3=sum_f3>>shift;
+    avg_f4=sum_f4>>shift;
+    avg_f5=sum_f5>>shift;
+    avg_f6=sum_f6>>shift;
+    avg_f7=sum_f7>>shift;
+    avg_f8=sum_f8>>shift;
+    avg_clear=sum_clear>>shift;
+    avg_nir=sum_nir>>shift;
+
+  Serial.print("Averaged sensor#1: ");
+  Serial.print("415nm: "); Serial.print(avg_f1); Serial.print(", ");
+  Serial.print("445nm: "); Serial.print(avg_f2); Serial.print(", ");
+  Serial.print("480nm: "); Serial.print(avg_f3); Serial.print(", ");
+  Serial.print("515nm: "); Serial.print(avg_f4); Serial.print(", ");
+  Serial.print("555nm: "); Serial.print(avg_f5); Serial.print(", ");
+  Serial.print("590nm: "); Serial.print(avg_f6); Serial.print(", ");
+  Serial.print("630nm: "); Serial.print(avg_f7); Serial.print(", ");
+  Serial.print("680nm: "); Serial.print(avg_f8); Serial.print(", ");
+  Serial.print("Clear: "); Serial.print(avg_clear); Serial.print(", ");
+  Serial.print("NIR: "); Serial.println(avg_nir);
+
+    n_samples=0;
+    sum_f1 = sum_f2 = sum_f3 = sum_f4 = sum_f5 = sum_f6 = sum_f7 = sum_f8 = sum_clear = sum_nir = 0;
+    
+
+  }
+  
   
 }
