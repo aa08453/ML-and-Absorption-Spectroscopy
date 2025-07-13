@@ -1,0 +1,48 @@
+import matplotlib.pyplot as plt 
+
+channels=["415", "445", "480", "515", "555", "590", "630", "680", "Clear", "NIR"]
+avg=[i for i in range(10)]
+colors=[ "#c63465","#20A156","#0f646f","#cc8d06","#632964","#dbfb26"]
+number=1
+color_index=0
+max_files=2
+name="newSetupSensor#"
+
+def file(filepath):
+
+    global number, avg, color_index
+    
+    if number>max_files:
+        return
+    
+    else:                    
+        with open(filepath, 'r') as f:
+            lines = f.readlines()[1:]
+
+            for i in range(len(lines)):
+                line=lines[i].split(',')
+                line=list(map(int,line[1:]))
+
+                for j in range(len(channels)):
+                    avg[j]+=line[j] 
+
+            avgg=[k//(len(lines)) for k in avg]
+
+            plt.plot(channels,avgg, 'ro-', label= f'sensor{number}',color=colors[color_index])  
+            avg=[0]*len(channels)
+
+        number+=1 
+        color_index+=1
+        file(f"{name}{number}.csv") 
+
+    if number==(max_files+1):
+        plt.ylim(0,30000)                                 
+        plt.title(f'{max_files} Averaged sensors with {len(lines)} samples')         
+        plt.grid(True)                                  
+        plt.ylabel('Intensity')    
+        plt.xlabel('Wavelength')    
+        plt.legend(loc='upper left')  
+        plt.show()
+
+
+file(f'{name}{number}.csv')
