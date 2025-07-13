@@ -1,0 +1,117 @@
+import serial
+import datetime
+import pandas as pd
+
+baud_rate=115200
+com_port='COM12'
+
+total_sensors=6
+max_samples=100
+count=0
+
+sensor1=[]
+sensor2=[]
+sensor3=[]
+sensor4=[]
+sensor5=[]
+sensor6=[]
+
+channels=["time", "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "Clear", "NIR"]
+
+arduino=serial.Serial(port=com_port, baudrate=baud_rate, timeout=1)
+
+def read_data(data):
+   
+    values=[]
+    data=data.split(',')
+    for i in data:
+        if '#' in i:
+            values.append(int(i.split('#')[1].strip()))
+        if ':' in i:
+            values.append(int(i.split(':')[1].strip())) #values=[1,2,3,4,5,6,7,8,9,10]
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return [timestamp] + values
+
+def data_list():
+
+    global count
+
+    while count<max_samples:
+
+        decoded_data=arduino.readline().decode().strip()
+
+        if 'Averaged' in decoded_data:
+           
+            reading=read_data(decoded_data)
+            number=reading[1]
+            reading.pop(1)
+            print(f"Sensor#{number}: ",reading)
+
+            if number==1:
+                sensor1.append(reading)
+            elif number==2:
+                sensor2.append(reading)
+            elif number==3:
+                sensor3.append(reading)
+            elif number==4:
+                sensor4.append(reading)
+            elif number==5:
+                sensor5.append(reading)
+            elif number==6:
+                sensor6.append(reading)
+
+            if number==total_sensors:
+                count+=1
+                print(f"\nReading: {count}/{max_samples}\n")
+
+    arduino.close()
+
+    s1=pd.DataFrame(sensor1,columns=channels, index=False)
+    s1.to_csv("Sensor#1.csv")
+    print("\nsaved to Sensor#1.csv\n")
+
+    s2=pd.DataFrame(sensor2,columns=channels, index=False)
+    s2.to_csv("Sensor#2.csv")
+    print("\nsaved to Sensor#2.csv\n")
+
+    s3=pd.DataFrame(sensor3,columns=channels, index=False)
+    s3.to_csv("Sensor#3.csv")
+    print("\nsaved to Sensor#3.csv\n")
+
+    s4=pd.DataFrame(sensor4,columns=channels, index=False)
+    s4.to_csv("Sensor#4.csv")
+    print("\nsaved to Sensor#4.csv\n")
+
+    s5=pd.DataFrame(sensor5,columns=channels, index=False)
+    s5.to_csv("Sensor#5.csv")
+    print("\nsaved to Sensor#5.csv\n")
+
+    s6=pd.DataFrame(sensor6,columns=channels, index=False)
+    s6.to_csv("Sensor#6.csv")
+    print("\nsaved to Sensor#6.csv\n")
+
+
+if __name__=="__main__":
+    data_list()
+    
+
+
+
+
+
+
+
+
+
+   
+
+
+
+
+    
+    
+
+
+    
+
