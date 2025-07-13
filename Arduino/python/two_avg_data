@@ -1,0 +1,84 @@
+import serial
+import pandas as pd
+import time
+from datetime import datetime
+import matplotlib.pyplot as plt 
+
+# Update this if needed
+SERIAL_PORT = 'COM12'
+BAUD_RATE = 115200
+MAX_READINGS = 20  # Number of averaged readings to collect
+
+labels = ["time", "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "Clear", "NIR"]
+
+sensor1_avg_data = []
+sensor2_avg_data = []
+
+# Open serial connection
+ser = serial.Serial(SERIAL_PORT, baudrate=BAUD_RATE, timeout=1)
+
+# ---------- Parsing functions ----------
+def parse_averaged_sensor_line(line, sensor_id):
+    prefix = f"Averaged sensor#{sensor_id}:"
+    if not line.startswith(prefix):
+        return None
+    try:
+        readings = line.split(":", 1)[1].strip().split(",")
+        values = []
+        for r in readings:
+            val = r.strip().split(" ")[-1]  # get the numeric value
+            values.append(int(val))
+        if len(values) != 10:
+            return None
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return [timestamp] + values
+    except:
+        return None
+    
+
+# ---------- Main Function ----------
+def main():
+    print(f"Collecting {MAX_READINGS} averaged readings from both sensors...")
+
+    count1 = count2 = 0
+
+    while count1 < MAX_READINGS or count2 < MAX_READINGS:
+        line = ser.readline().decode('utf-8', errors='ignore').strip()
+        
+        # Skip separator lines
+        if '-' in line or not line:
+            continue
+
+        reading1 = parse_averaged_sensor_line(line, 1)
+        reading2 = parse_averaged_sensor_line(line, 2)
+
+        #makeFig(reading1, reading2)
+
+        if reading1 and count1 < MAX_READINGS:
+            sensor1_avg_data.append(reading1)
+            count1 += 1
+            print(f"Sensor#1 Reading {count1}/{MAX_READINGS}", end="\r")
+
+        if reading2 and count2 < MAX_READINGS:
+            sensor2_avg_data.append(reading2)
+            count2 += 1
+            print(f"Sensor#2 Reading {count2}/{MAX_READINGS}", end="\r")
+
+    ser.close()
+
+    # Save to CSV
+    
+
+    df1 = pd.DataFrame(sensor1_avg_data, columns=labels)
+    df1.to_csv("newSetupSensor#1Cuvettereflection.csv", index=False)
+    print("\nSaved: newSensor#1Cuvettereflection.csv")
+
+    df2 = pd.DataFrame(sensor2_avg_data, columns=labels)
+    df2.to_csv("newSetupSensor#2Cuvettereflection.csv", index=False)
+    print("Saved: newSensor#2Cuvettereflection.csv")
+
+   
+
+# ---------- Entry ----------
+if __name__ == "__main__":
+    main()
