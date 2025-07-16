@@ -1,0 +1,63 @@
+import matplotlib.pyplot as plt 
+
+channels=["415", "445", "480", "515", "555", "590", "630", "680", "Clear", "NIR"]
+avg=[i for i in range(10)]
+colors=[ "#c63465","#20A156","#0f646f","#cc8d06","#632964","#dbfb26"]
+
+number=1 #least number of sensors
+color_index=0 
+max_files=24 #max sensors
+firstname="s" #name of every file-> keep same formatting
+secondname="_"
+remount=0
+sensor=1
+
+def file(filepath):
+
+    global number, avg, color_index,remount,sensor
+    
+    if number>max_files:
+
+        plt.ylim(0,30000)                                 
+        plt.title('4 sensors x5 remounting')         
+        plt.grid(True)                                  
+        plt.ylabel('Intensity')    
+        plt.xlabel('Wavelength')    
+        plt.legend(loc='upper left')  
+        plt.show()
+        return
+    else:                    
+        with open(filepath, 'r') as f:
+            lines = f.readlines()[1:]
+            print(lines)
+
+            line=lines[4].split(',')
+            line=list(map(int,line[1:]))
+
+                #     for j in range(len(channels)):
+                #         avg[j]+=line[j] 
+
+                # avgg=[k//(len(lines)) for k in avg]
+
+                #plt.plot(channels,avgg, 'ro-', label= f'sensor{number}',color=colors[color_index])
+            if remount == 0:
+                plt.plot(channels, line, 'o-', color=colors[color_index], label=f'{firstname}{sensor}')
+            else:
+                plt.plot(channels, line, 'o-', color=colors[color_index])
+                
+            #avg=[0]*len(channels)
+
+            
+            remount+=1
+            number+=1 
+            
+            if remount==6:
+                remount=0
+                color_index+=1
+                sensor+=1
+            
+        file(f"{firstname}{sensor}{secondname}{remount}.csv") 
+
+    
+
+file(f'{firstname}{sensor}{secondname}{remount}.csv')
