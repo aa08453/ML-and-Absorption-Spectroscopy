@@ -35,18 +35,16 @@ for i in range(10):
         print(f"{channels[i]} | Sensor#{j+1} | μ = {mu:.2f}, σ = {std:.6f}, min = {min(reading)}, max = {max(reading)}")
 
         plt.plot(x, pdf, label=f'sensor {j+1}', color=colors[j])
-        plt.plot(mu,norm.pdf(mu, loc=mu, scale=std), marker='o', label=f'mean{j+1}:{mu}', color=colors[j+2])
-        plt.plot(mu + std, norm.pdf(mu + std, loc=mu, scale=std),marker='*', label=f'+1σsensor{j+1}:{round(std,2)} ',color=colors[j+4])
-        plt.plot(mu - std, norm.pdf(mu - std, loc=mu, scale=std),marker='*', label=f'-1σsensor{j+1}:{round(std,2)}',color=colors[j+6])
-        
+        plt.plot(mu,norm.pdf(mu, loc=mu, scale=std), marker='o', label=f'mean: {mu}', color=colors[j+2])
+        plt.plot(mu + std, norm.pdf(mu + std, loc=mu, scale=std),marker='*', label=f'+1σ: {round(std,2)} ',color=colors[j+4])
+        plt.plot(mu - std, norm.pdf(mu - std, loc=mu, scale=std),marker='*', label=f'-1σ: {round(std,2)}',color=colors[j+6])
 
-   # X-axis range based on all sensor readings
+
     combined_min = min(all_values)
     combined_max = max(all_values)
     padding = (combined_max - combined_min) * 0.2
     plt.xlim(combined_min - padding, combined_max + padding)
 
-    # X ticks every 10 units
     ticks = np.arange(int(combined_min - padding), int(combined_max + padding), 10)
     plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=10, prune='both'))
 
