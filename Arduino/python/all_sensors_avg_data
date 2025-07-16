@@ -6,7 +6,7 @@ baud_rate=115200
 com_port='COM13'
 
 total_sensors=2
-max_samples=100 
+max_samples=10
 count=0 #count increases after 1 reading of every sensor
 
 sensor1=[]
@@ -76,12 +76,12 @@ def data_list():
 
     arduino.close()
 
-    s1=pd.DataFrame(sensor1,columns=channels, index=False)
-    s1.to_csv("s1left15.csv")
+    s1=pd.DataFrame(sensor1,columns=channels)
+    s1.to_csv("s3R2Left15.csv", index=False)
     print("\nsaved to Sensor#1.csv\n")
 
-    s2=pd.DataFrame(sensor2,columns=channels, index=False)
-    s2.to_csv("s2right14.csv")
+    s2=pd.DataFrame(sensor2,columns=channels)
+    s2.to_csv("s4R2Right14.csv", index=False)
     print("\nsaved to Sensor#2.csv\n")
 
     # s3=pd.DataFrame(sensor3,columns=channels, index=False)
@@ -99,8 +99,7 @@ def data_list():
     # s6=pd.DataFrame(sensor6,columns=channels, index=False)
     # s6.to_csv("Sensor#6.csv")
     # print("\nsaved to Sensor#6.csv\n")
-
-
+    
 if __name__=="__main__":
     data_list()
     
