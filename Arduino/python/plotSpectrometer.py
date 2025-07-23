@@ -2,13 +2,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import glob
 
+csv_file = "filename.csv"
+
 # Function to read CSV and extract wavelength and absorbance
 def read_absorption_data(file):
     df = pd.read_csv(file, skiprows=12, usecols=[0, 1], names=["Wavelength", "Absorbance"])
     return df
-
-# Get all CSV files in the directory
-csv_file = "filename.csv"
 
 plt.figure(figsize=(10, 6))
 
