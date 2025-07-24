@@ -64,6 +64,21 @@ long f1, f2, f3, f4, f5, f6, f7, f8, clear, nir;
 long f1_2, f2_2, f3_2, f4_2, f5_2, f6_2, f7_2, f8_2, clear_2, nir_2;
 
 
+//long sen8[] = {-33.62731483,	-2241.758797,	-237.174074,	-986.7162033,	-1817.181018,	-116.8722217,	81.41435333,	-358.6944443,	-1961.589813,	-87.56203717}; //8
+//long sen1[] = {-281.1148148	,-693.8814817	,-146.7962962	,-312.3925917	,-1064.892592,	49.8,	-107.3666667,	-45.037037,	710.6814817,	-34.9703705}; //14
+
+long sen1[] = {0,0,0,0,0,0,0,0,0,0}; //2 
+long led_offset[] = {0,0,0,0,0,0,0,0,0,0}; //2 new
+
+//long sen1[] = {422.5527777,	-179.47963,	190.7814815,	723.9064817,	-358.4388883,	-183.0722217,	-57.64629667,	-130.662037,	2195.974075,	-91.59722233}; //3
+//long led_offset[]={-514.3425927,	-2306.12963,	-642.0888888,	-2193.14074,	-2782.901852,	-2459.957407,	-1576.633333,	-648.6222222,	-6447.49074,	-329.0425927}; //3 new
+
+
+ //long sen1[] = {101.973148,	712.36574,	80.76574067,	-41.12777833,	518.1259267,	-235.280555,	-408.89537,	-82.535185,	11167.46574,	195.7898147}; //4
+ //long led_offset[]={-701.1981487,	-1784.35185,	-134.8777778,	-1379.12963,	-1601.768522,	-1294.957407,	-930.7444433,	-375.5555552,	2310.57593,	-183.0425927}; //4 new
+
+
+//long sen1[] = {-64.22870387,	-2067.14074	,-470.6222222	,-1193.487962,	-2770.099074,	-2271.449073,	-1496.969443	,-441.75,	-2589.696296	,-455.2481481}; //7
 const int channels = 10;
 
 int shift=4;
@@ -78,11 +93,11 @@ void setup() {
   pinMode(S3, OUTPUT);
 
    selectMuxChannel(left);  
-  initSensor(sensor1, "Sensor#1", 4);
+  initSensor(sensor1, "Sensor#1", 1);
   sensor1.enableLED(false);
 
   selectMuxChannel(right);  
-  initSensor(sensor2, "Sensor#2",4);
+  initSensor(sensor2, "Sensor#2",1);
   sensor2.enableLED(true);
 }
 
@@ -205,36 +220,7 @@ void loop() {
     nir_2 = sensor2.getChannel(AS7341_CHANNEL_NIR);
 
   Serial.print(millis() / 1000.0, 3); 
-  Serial.print("s | ");
-
-  // Serial.println("");
-  // Serial.print("sensor1: ");
-  // Serial.print("415nm: ");Serial.print(sensor1.getChannel(AS7341_CHANNEL_415nm_F1)); Serial.print(", ");
-  // Serial.print("445nm: ");Serial.print(sensor1.getChannel(AS7341_CHANNEL_445nm_F2)); Serial.print(", ");
-  // Serial.print("480nm: ");Serial.print(sensor1.getChannel(AS7341_CHANNEL_480nm_F3)); Serial.print(", ");
-  // Serial.print("515nm: ");Serial.print(sensor1.getChannel(AS7341_CHANNEL_515nm_F4)); Serial.print(", ");
-  // Serial.print("555nm: ");Serial.print(sensor1.getChannel(AS7341_CHANNEL_555nm_F5)); Serial.print(", ");
-  // Serial.print("590nm: ");Serial.print(sensor1.getChannel(AS7341_CHANNEL_590nm_F6)); Serial.print(", ");
-  // Serial.print("630nm: ");Serial.print(sensor1.getChannel(AS7341_CHANNEL_630nm_F7)); Serial.print(", ");
-  // Serial.print("680nm: ");Serial.print(sensor1.getChannel(AS7341_CHANNEL_680nm_F8)); Serial.print(", ");
-  // Serial.print("CLEAR: ");Serial.print(sensor1.getChannel(AS7341_CHANNEL_CLEAR));    Serial.print(", ");
-  // Serial.print("NIR: ");Serial.println(sensor1.getChannel(AS7341_CHANNEL_NIR));
-
-  // Serial.print(millis() / 1000.0, 3); 
-  // Serial.print("s | ");
-  //   Serial.print("sensor2: ");
-  // Serial.print("415nm: ");Serial.print(sensor2.getChannel(AS7341_CHANNEL_415nm_F1)); Serial.print(", ");
-  // Serial.print("445nm: ");Serial.print(sensor2.getChannel(AS7341_CHANNEL_445nm_F2)); Serial.print(", ");
-  // Serial.print("480nm: ");Serial.print(sensor2.getChannel(AS7341_CHANNEL_480nm_F3)); Serial.print(", ");
-  // Serial.print("515nm: ");Serial.print(sensor2.getChannel(AS7341_CHANNEL_515nm_F4)); Serial.print(", ");
-  // Serial.print("555nm: ");Serial.print(sensor2.getChannel(AS7341_CHANNEL_555nm_F5)); Serial.print(", ");
-  // Serial.print("590nm: ");Serial.print(sensor2.getChannel(AS7341_CHANNEL_590nm_F6)); Serial.print(", ");
-  // Serial.print("630nm: ");Serial.print(sensor2.getChannel(AS7341_CHANNEL_630nm_F7)); Serial.print(", ");
-  // Serial.print("680nm: ");Serial.print(sensor2.getChannel(AS7341_CHANNEL_680nm_F8)); Serial.print(", ");
-  // Serial.print("CLEAR: ");Serial.print(sensor2.getChannel(AS7341_CHANNEL_CLEAR));    Serial.print(", ");
-  // Serial.print("NIR: ");Serial.println(sensor2.getChannel(AS7341_CHANNEL_NIR));
- 
-  
+  Serial.print("s | ");  
 
  sum1_f1+=f1;
  sum1_f2+=f2;
@@ -289,27 +275,38 @@ n_samples++;
   avg2_clear = sum2_clear >> shift;
   avg2_nir = sum2_nir >> shift;
 
- 
-
-  // while (flag==false){
-  //   avg1_f1!=avg2_f1
-  //   avg1_f2!=avg2_f2
-  //   avg1_f3!=avg2_f3
-  //   avg1_f4!=avg2_f1
-  //   avg1_f5!=avg2_f1
-  //   avg1_f6!=avg2_f1
-  //   avg1_f7!=avg2_f1
-  //   avg1_f8!=avg2_f1
-  //   avg1_clear!=avg2_f1
-  //   avg1_nir!=avg2_f1
-  // }
-
-
   Serial.println(" ");
   Serial.print(millis() / 1000.0, 3); 
   Serial.print("s | ");
 
   Serial.print("Averaged sensor#1: ");
+  Serial.print("415nm: "); Serial.print(avg1_f1 + sen1[0]+ led_offset[0]); Serial.print(", ");
+  Serial.print("445nm: "); Serial.print(avg1_f2 + sen1[1]+ led_offset[1]); Serial.print(", ");
+  Serial.print("480nm: "); Serial.print(avg1_f3 + sen1[2]+ led_offset[2]); Serial.print(", ");
+  Serial.print("515nm: "); Serial.print(avg1_f4 + sen1[3]+ led_offset[3]); Serial.print(", ");
+  Serial.print("555nm: "); Serial.print(avg1_f5 + sen1[4]+ led_offset[4]); Serial.print(", ");
+  Serial.print("590nm: "); Serial.print(avg1_f6 + sen1[5]+ led_offset[5]); Serial.print(", ");
+  Serial.print("630nm: "); Serial.print(avg1_f7 + sen1[6]+ led_offset[6]); Serial.print(", ");
+  Serial.print("680nm: "); Serial.print(avg1_f8 + sen1[7]+ led_offset[7]); Serial.print(", ");
+  Serial.print("Clear: "); Serial.print(avg1_clear + sen1[8]+ led_offset[8]); Serial.print(", ");
+  Serial.print("NIR: "); Serial.println(avg1_nir + sen1[9]+ led_offset[9]);
+
+  Serial.print(millis() / 1000.0, 3); 
+  Serial.print("s | ");
+
+  // Serial.print("Averaged sensor#2: ");
+  // Serial.print("415nm: "); Serial.print(avg2_f1); Serial.print(", ");
+  // Serial.print("445nm: "); Serial.print(avg2_f2); Serial.print(", ");
+  // Serial.print("480nm: "); Serial.print(avg2_f3); Serial.print(", ");
+  // Serial.print("515nm: "); Serial.print(avg2_f4); Serial.print(", ");
+  // Serial.print("555nm: "); Serial.print(avg2_f5); Serial.print(", ");
+  // Serial.print("590nm: "); Serial.print(avg2_f6); Serial.print(", ");
+  // Serial.print("630nm: "); Serial.print(avg2_f7); Serial.print(", ");
+  // Serial.print("680nm: "); Serial.print(avg2_f8); Serial.print(", ");
+  // Serial.print("Clear: "); Serial.print(avg2_clear); Serial.print(", ");
+  // Serial.print("NIR: "); Serial.println(avg2_nir);
+
+  Serial.print("Averaged sensor#2: ");
   Serial.print("415nm: "); Serial.print(avg1_f1); Serial.print(", ");
   Serial.print("445nm: "); Serial.print(avg1_f2); Serial.print(", ");
   Serial.print("480nm: "); Serial.print(avg1_f3); Serial.print(", ");
@@ -321,44 +318,31 @@ n_samples++;
   Serial.print("Clear: "); Serial.print(avg1_clear); Serial.print(", ");
   Serial.print("NIR: "); Serial.println(avg1_nir);
 
-  Serial.print(millis() / 1000.0, 3); 
-  Serial.print("s | ");
 
-  Serial.print("Averaged sensor#2: ");
-  Serial.print("415nm: "); Serial.print(avg2_f1); Serial.print(", ");
-  Serial.print("445nm: "); Serial.print(avg2_f2); Serial.print(", ");
-  Serial.print("480nm: "); Serial.print(avg2_f3); Serial.print(", ");
-  Serial.print("515nm: "); Serial.print(avg2_f4); Serial.print(", ");
-  Serial.print("555nm: "); Serial.print(avg2_f5); Serial.print(", ");
-  Serial.print("590nm: "); Serial.print(avg2_f6); Serial.print(", ");
-  Serial.print("630nm: "); Serial.print(avg2_f7); Serial.print(", ");
-  Serial.print("680nm: "); Serial.print(avg2_f8); Serial.print(", ");
-  Serial.print("Clear: "); Serial.print(avg2_clear); Serial.print(", ");
-  Serial.print("NIR: "); Serial.println(avg2_nir);
    Serial.println("");
 //long r=(((avg1_f1+avg2_f1)>>1))*100);
    
-   Serial.print("Difference:");
-  Serial.print((float)(abs(avg1_f1-avg2_f1))/((avg1_f1+avg2_f1)>>1)*100);
-  Serial.print(",    ");
-  Serial.print((float)(abs(avg1_f2-avg2_f2))/((avg1_f2+avg2_f2)>>1)*100);
-  Serial.print(",    ");
-  Serial.print((float)(abs(avg1_f3-avg2_f3))/((avg1_f3+avg2_f3)>>1)*100);
-  Serial.print(",    ");
-  Serial.print((float)(abs(avg1_f4-avg2_f4))/((avg1_f4+avg2_f4)>>1)*100);
-  Serial.print(",    ");
-  Serial.print((float)(abs(avg1_f5-avg2_f5))/((avg1_f5+avg2_f5)>>1)*100);
-  Serial.print(",    ");
- Serial.print((float)(abs(avg1_f6-avg2_f6))/((avg1_f6+avg2_f6)>>1)*100);
-  Serial.print(",    ");
-  Serial.print((float)(abs(avg1_f7-avg2_f7))/((avg1_f7+avg2_f7)>>1)*100);
-  Serial.print(",    ");
-  Serial.print((float)(abs(avg1_f8-avg2_f8))/((avg1_f8+avg2_f8)>>1)*100);
-  Serial.print(",    ");
-  Serial.print((float)(abs(avg1_clear-avg2_clear))/((avg1_clear+avg2_clear)>>1)*100);
-  Serial.print(",    ");
-  Serial.print((float)(abs(avg1_nir-avg2_nir))/((avg1_nir+avg2_nir)>>1)*100);
-  Serial.println("");
+//    Serial.print("Difference:");
+//   Serial.print((float)(abs(avg1_f1-avg2_f1))/((avg1_f1+avg2_f1)>>1)*100);
+//   Serial.print(",    ");
+//   Serial.print((float)(abs(avg1_f2-avg2_f2))/((avg1_f2+avg2_f2)>>1)*100);
+//   Serial.print(",    ");
+//   Serial.print((float)(abs(avg1_f3-avg2_f3))/((avg1_f3+avg2_f3)>>1)*100);
+//   Serial.print(",    ");
+//   Serial.print((float)(abs(avg1_f4-avg2_f4))/((avg1_f4+avg2_f4)>>1)*100);
+//   Serial.print(",    ");
+//   Serial.print((float)(abs(avg1_f5-avg2_f5))/((avg1_f5+avg2_f5)>>1)*100);
+//   Serial.print(",    ");
+//  Serial.print((float)(abs(avg1_f6-avg2_f6))/((avg1_f6+avg2_f6)>>1)*100);
+//   Serial.print(",    ");
+//   Serial.print((float)(abs(avg1_f7-avg2_f7))/((avg1_f7+avg2_f7)>>1)*100);
+//   Serial.print(",    ");
+//   Serial.print((float)(abs(avg1_f8-avg2_f8))/((avg1_f8+avg2_f8)>>1)*100);
+//   Serial.print(",    ");
+//   Serial.print((float)(abs(avg1_clear-avg2_clear))/((avg1_clear+avg2_clear)>>1)*100);
+//   Serial.print(",    ");
+//   Serial.print((float)(abs(avg1_nir-avg2_nir))/((avg1_nir+avg2_nir)>>1)*100);
+//   Serial.println("");
   
  
   Serial.println("---------------------------------------------------------------------------------------------------------------------------------------------------------------");
