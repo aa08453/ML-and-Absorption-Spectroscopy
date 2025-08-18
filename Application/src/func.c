@@ -73,27 +73,21 @@ static inline uint8_t bitmask(int bits, int position)
     return ((1U << bits) - 1) << position;
 }
 
-void write_bits(uint8_t reg, uint8_t field_value, int position, bool read, int bits)
+void write_bits(uint8_t reg, uint8_t field_value, int position, int bits)
 {
-    uint8_t mask = bitmask(bits, position);
-    uint8_t value = (field_value << position) & mask;
-
-    int ret;
-    if (read) // only a specific portion
-        ret = i2c_reg_update_byte(sensor, ADDR, reg, mask, value);
-    else
-        // Direct write with pre-masked value (used only if you're sure the rest of the bits are don't-care)
-        ret = i2c_reg_write_byte(sensor, ADDR, reg, value);
-
-    if (ret)
-        printk("Unable to write register 0x%02X, ret = %d\n", reg, ret);
+    uint8_t mask = ((1U << bits) - 1) << position;
+    uint8_t old_val;
+    i2c_reg_read_byte(sensor, ADDR, reg, &old_val);
+    uint8_t new_val = (old_val & ~mask) | ((field_value << position) & mask);
+    int ret = i2c_reg_write_byte(sensor, ADDR, reg, new_val);
+    if (ret) printk("Unable to write 0x%02X\n", reg);
 }
 
-// wrapper for ON/OFF
-void write_state(uint8_t reg, state_t state, int position, bool read, int bits)
-{
-    write_bits(reg, state == ON, position, read, bits);
+void write_state(uint8_t reg, state_t state, int position, bool read, int bits) 
+{ 
+    write_bits(reg, state == ON, position, read, bits); 
 }
+
 
 void write_reg(uint8_t reg, uint8_t value)
 {
@@ -113,17 +107,17 @@ void bank(state_t state)
 
 
 
-// void blink_LED(void* p1, void* p2, void* p3)
-// {
-//     while (1)
-//     {
-//         bank(ON);
-//         write_state(CONFIG, led_state, 3, false, 1);
-//         write_state(LED, led_state, 7, true, 1);
-//         bank(OFF);
-//         k_usleep(10);  
-//     }
-// }
+void blink_LED(void* p1, void* p2, void* p3)
+{
+    while (1)
+    {
+        bank(ON);
+        write_state(CONFIG, led_state, 3, false, 1);
+        write_state(LED, led_state, 7, true, 1);
+        bank(OFF);
+        k_usleep(10);  
+    }
+}
 
 void blink_LED()
 {
@@ -183,7 +177,7 @@ uint16_t get_ASTEP()
 
 void set_GAIN(gain_t gain)
 {
-    write_bits(CFG1, (uint8_t)gain, 0, false, 5);
+    write_bits(CFG1, (uint8_t)gain, 0, 5);
 }
 
 gain_t get_GAIN()
@@ -236,82 +230,57 @@ void set_LED_current(int current)
         current = 4;
 
     uint8_t led_drive = (current - 4) >> 1;
-    write_bits(LED, led_drive, 0, false, 7);
+    write_bits(LED, led_drive, 0, 7);
     printk("LED current set to %dmA\n", current);  
 }
 
 
 void enable_SINT_SMUX()
 {
-    write_bits(CFG9, 1, 4, true, 1);
+    write_bits(CFG9, 1, 4, 1);
 }
 
 void enable_SIEN()
 {
-    write_bits(INTENAB, 1, 0, true, 1);
+    write_bits(INTENAB, 1, 0, 1);
 }
 
 void enable_PON()
 {
-    write_bits(ENABLE, 1, 0, true, 1);
+    write_bits(ENABLE, 1, 0, 1);
 }
 
 // enable spectral measurement
 void enable_SP(uint8_t num)
 {
-    write_bits(ENABLE, num, 1, true, 1);   
+    write_bits(ENABLE, num, 1, 1);   
 }
 
 // enable SMUX
 bool enable_SMUX()
 {
-    write_bits(ENABLE, 1, 4, true, 1);
-    // printk("Value of SMUX_enable = %d\n" , read_reg_field(ENABLE, true, 4, 1));
-    int timeOut = 5000; // Arbitrary value, but if it takes 1000 milliseconds then
-                      // something is wrong
-    int count = 0;
-    uint8_t value = read_reg_field(ENABLE, true, 4, 1);
-    while (value && count < timeOut) 
-    {
+    write_bits(ENABLE, 1, 4, 1);  // set SMUXEN=1
+    int timeout = 1000;
+    while (timeout-- > 0) {
+        if (read_reg_field(ENABLE, true, 4, 1) == 0)
+            return true; // success
         k_msleep(1);
-        count++;
     }
-    // printk("Timeout \t count = %d\n", count);
-    if (count >= timeOut)
-        return false;
-    else
-        return true;
+    return false; // timeout
 }
 
-// polling to see if SMUX is enabled and cleared
-bool get_SMUX_enable()
-{
-    int timeOut = 1000; // Arbitrary value, but if it takes 1000 milliseconds then
-                      // something is wrong
-    int count = 0;
-    uint8_t value = read_reg_field(ENABLE, true, 4, 1);
-    while (value && count < timeOut) 
-    {
-        k_msleep(1);
-        count++;
-    }
-    // printk("Timeout \t count = %d\n", count);
-    if (count >= timeOut)
-        return false;
-    else
-        return true;
-}
 
 // set SMUX command
 void SMUX_Config_RAM()
 {
-    write_bits(CFG6, 2, 3, true, 2);
+    write_bits(CFG6, 2, 3, 2);
 }
 
 
 uint8_t get_AVALID()
 {    
     return read_reg_field(STATUS2, true, 6, 1);
+    
 }
 
 
@@ -373,6 +342,7 @@ void read_ADCs(uint16_t* buffer, int start)
     buffer[start + 3] = read_two_reg(CH3_DATA);
     buffer[start + 4] = read_two_reg(CH4_DATA);
     buffer[start + 5] = read_two_reg(CH5_DATA);
+		
 }
 
 
@@ -386,13 +356,19 @@ void read_channels(bool f1_to_f4)
 
     SMUX_Config_RAM();
     map_to_ADCs(f1_to_f4);
-    while(enable_SMUX());
+
+    if (!enable_SMUX()) {
+        printk("SMUX enable failed\n");
+        return;
+    }
     
-    // while (get_SMUX_enable());
-    // printk("Value of SMUX_enable = %d\n" , read_reg_field(ENABLE, true, 4, 1));
+
     enable_SP(1);
-    // printk("Value of SP_Enable = %d\n" , read_reg_field(ENABLE, true, 1, 1));
-    while (!get_AVALID());
+    bool DataReady = false;
+    while(!DataReady)
+    {
+        DataReady = get_AVALID();
+    }
     int start = f1_to_f4 ? 0 : 6;
     read_ADCs(channel_readings, start);
 }

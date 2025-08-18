@@ -52,3 +52,7 @@ gain_t get_GAIN();
 void enable_LED(state_t state);
 
 void set_LED_current(int current);
+
+void read_all_channels();
+uint16_t get_channel(color_channel_t channel);
+
