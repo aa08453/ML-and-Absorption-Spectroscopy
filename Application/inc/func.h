@@ -4,8 +4,13 @@
 
 #include "addr.h"
 
-
 typedef enum { OFF, ON } state_t;
+
+typedef struct {
+    const struct device* sensor;   // which I2C bus
+    uint16_t channel_readings[12];          // raw channel values
+    volatile state_t led_state;
+} as7341_t;
 
 typedef enum 
 {
@@ -37,22 +42,21 @@ typedef enum {
   GAIN_512X,
 } gain_t;
 
-int init(const struct device* as7341);
+int init(as7341_t* as7341);
 
+void set_ATIME(as7341_t* as7341, uint8_t value);
+uint8_t get_ATIME(as7341_t* as7341);
 
-void set_ATIME(uint8_t value);
-uint8_t get_ATIME();
+void set_ASTEP(as7341_t* as7341,uint16_t value);
+uint16_t get_ASTEP(as7341_t* as7341);
 
-void set_ASTEP(uint16_t value);
-uint16_t get_ASTEP();
+void set_GAIN(as7341_t* as7341, gain_t gain);
+gain_t get_GAIN(as7341_t* as7341);
 
-void set_GAIN(gain_t gain);
-gain_t get_GAIN();
+void enable_LED(as7341_t* as7341, state_t state);
 
-void enable_LED(state_t state);
+void set_LED_current(as7341_t* as7341, int current);
 
-void set_LED_current(int current);
-
-void read_all_channels();
-uint16_t get_channel(color_channel_t channel);
+void read_all_channels(as7341_t* as7341);
+uint16_t get_channel(as7341_t* as7341, color_channel_t channel);
 
