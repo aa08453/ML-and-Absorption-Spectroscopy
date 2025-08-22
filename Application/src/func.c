@@ -12,31 +12,11 @@ struct k_thread adc_thread;
 
 //==========================================================================================
 
-int bus_scan(const struct device* sensor)
-{
-    // printk("Scanning I2C bus...\n");
-    for (uint8_t addr = 0x03; addr < 0x78; addr++) 
-    {
-        uint8_t dummy;
-        int ret = i2c_read(sensor, &dummy, 1, addr);
-        if (ret == 0)
-        {
-            // printk("Device found at 0x%02X\n", addr);
-            return 0;
-        }
-    }
-    printk("Device not found.\n");
-    return -1;
-}
-
-//==========================================================================================
-
 uint8_t read_bits(uint8_t reg_value, int position, int bit_count)
 {
     uint8_t mask = ((1U << bit_count) - 1) << position;
     return (reg_value & mask) >> position;
 }
-
 
 uint8_t read_reg_field(const struct device* sensor, uint8_t reg_addr, bool field, int position, int bit_count)
 {
@@ -65,7 +45,6 @@ uint16_t read_two_reg(const struct device* sensor, uint8_t reg_addr)
 //=====================================================================================
 
 
-// Inline utility to build a bitmask at a position
 static inline uint8_t bitmask(int bits, int position) 
 {
     return ((1U << bits) - 1) << position;
@@ -93,11 +72,39 @@ void write_state(const struct device* sensor, uint8_t reg, state_t state, int po
 void write_reg(const struct device* sensor, uint8_t reg, uint8_t value)
 {
     int ret = i2c_reg_write_byte(sensor, ADDR, reg, value);
-    if (ret) {
+    if (ret)
         printk("Unable to write register 0x%02X, ret = %d\n", reg, ret);
-    }  
 }
 
+
+//==========================================================================================
+
+int bus_scan(const struct device* sensor)
+{
+    // printk("Scanning I2C bus...\n");
+    for (uint8_t addr = 0x03; addr < 0x78; addr++) 
+    {
+        uint8_t dummy;
+        int ret = i2c_read(sensor, &dummy, 1, addr);
+        if (ret == 0)
+            return 0;
+    }
+    printk("Device not found.\n");
+    return -1;
+}
+
+
+int init(as7341_t* as7341)
+{
+	if (as7341->sensor == NULL || !device_is_ready(as7341->sensor))
+	{
+		printk("No device\n");
+		return -1;
+	} 
+    if (bus_scan(as7341->sensor) < 0) return -1;
+	// printk("Sensor initialized\n");
+    return 0;
+}
 
 //==========================================================================================
 
@@ -127,6 +134,40 @@ void blink_LED(const struct device* sensor, state_t state)
     write_state(sensor, LED, state, 7, 1);
     bank(sensor, OFF);
     k_usleep(10);   
+}
+
+
+
+void enable_LED(as7341_t* as7341, state_t state)
+{
+    static bool led_thread_created = false;
+    // const char *s = (state) ? "ON" : "OFF";
+    // printk("LED turned %s\n", s);
+    as7341->led_state = state;
+    if (!led_thread_created)
+    {
+        // const char *s = (state) ? "ON" : "OFF";
+        // printk("LED turned %s\n", s);
+    //     static struct k_thread led_thread;
+
+    //     k_thread_create(&led_thread, led_stack, K_THREAD_STACK_SIZEOF(led_stack),
+    //         blink_LED, NULL, NULL, NULL,
+    //         5, 0, K_NO_WAIT);
+        led_thread_created = true;
+    }
+    blink_LED(as7341->sensor, state);
+}
+
+void set_LED_current(as7341_t* as7341, int current)
+{
+    if (current > 258)
+        current = 258;
+    else if (current < 4)
+        current = 4;
+
+    uint8_t led_drive = (current - 4) >> 1;
+    write_bits(as7341->sensor, LED, led_drive, 0, 7);
+    printk("LED current set to %dmA\n", current);  
 }
 
 //==========================================================================================
@@ -186,54 +227,7 @@ gain_t get_GAIN(as7341_t* as7341)
     return (gain_t) read_reg_field(as7341->sensor, CFG1, true, 0, 5);
 }
 
-//==========================================================================================
-
-
-int init(as7341_t* as7341)
-{
-	if (as7341->sensor == NULL || !device_is_ready(as7341->sensor))
-	{
-		printk("No device\n");
-		return -1;
-	} 
-    if (bus_scan(as7341->sensor) < 0) return -1;
-	printk("Sensor initialized\n");
-    return 0;
-}
-
-
-void enable_LED(as7341_t* as7341, state_t state)
-{
-    static bool led_thread_created = false;
-    // const char *s = (state) ? "ON" : "OFF";
-    // printk("LED turned %s\n", s);
-    as7341->led_state = state;
-    if (!led_thread_created)
-    {
-        const char *s = (state) ? "ON" : "OFF";
-        printk("LED turned %s\n", s);
-    //     static struct k_thread led_thread;
-
-    //     k_thread_create(&led_thread, led_stack, K_THREAD_STACK_SIZEOF(led_stack),
-    //         blink_LED, NULL, NULL, NULL,
-    //         5, 0, K_NO_WAIT);
-        led_thread_created = true;
-    }
-    blink_LED(as7341->sensor, state);
-}
-
-void set_LED_current(as7341_t* as7341, int current)
-{
-    if (current > 258)
-        current = 258;
-    else if (current < 4)
-        current = 4;
-
-    uint8_t led_drive = (current - 4) >> 1;
-    write_bits(as7341->sensor, LED, led_drive, 0, 7);
-    printk("LED current set to %dmA\n", current);  
-}
-
+//=======================================================================================================
 
 void enable_SINT_SMUX(const struct device* sensor)
 {
@@ -342,9 +336,9 @@ void read_ADCs(const struct device* sensor, uint16_t* buffer, int start)
     buffer[start + 3] = read_two_reg(sensor, CH3_DATA);
     buffer[start + 4] = read_two_reg(sensor, CH4_DATA);
     buffer[start + 5] = read_two_reg(sensor, CH5_DATA);
-		
 }
 
+//=============================================================================================
 
 void read_channels(const struct device* sensor, uint16_t* buffer,  bool f1_to_f4)
 {
@@ -383,6 +377,9 @@ void read_all_channels(as7341_t* as7341)
     read_channels(as7341->sensor, as7341->channel_readings, true);
     read_channels(as7341->sensor, as7341->channel_readings, false);
 }
+
+//===========================================================================
+
 
 // void print_channels(void *arg1, void *arg2, void *arg3)
 // {

@@ -27,10 +27,9 @@ int main(void)
 
 	while (1)
 	{
-        enable_LED(&sensor1, OFF);
+        // enable_LED(&sensor1, OFF);
 		read_all_channels(&sensor1);  // fills global buffer
 
-		// printk("Channel Readings: ");
 		if (num_samples < NUM_SAMPLES)
 		{
 			for (int k = 0; k < 12; k++)
@@ -40,18 +39,21 @@ int main(void)
 
 		else
 		{
+			printk("Channel Readings: ");
 			for (int i = 0; i < 4; ++i)
 			{
-				printk("%u\t", (readings[i] >> SHIFT));
+				if (i == 0)
+					printk("%u", (readings[0] >> SHIFT));
+				else
+					printk("\t%u", (readings[i] >> SHIFT));
 				readings[i] = 0;
 			}
 			for (int i = 6; i < 12; ++i)
 			{
-				printk("%u\t", (readings[i] >> SHIFT));
+				printk("\t%u", (readings[i] >> SHIFT));
 				readings[i] = 0;
 			}
 			
-
 			printk("\n");
 			num_samples = 0;
 
