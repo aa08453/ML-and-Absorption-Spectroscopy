@@ -27,9 +27,10 @@ int main(void)
 
 	while (1)
 	{
-        // enable_LED(&sensor1, OFF);
+        enable_LED(&sensor1, OFF);
 		read_all_channels(&sensor1);  // fills global buffer
 
+		// accumulation
 		if (num_samples < NUM_SAMPLES)
 		{
 			for (int k = 0; k < 12; k++)
@@ -39,6 +40,7 @@ int main(void)
 
 		else
 		{
+			// shifting to divide and get average
 			printk("Channel Readings: ");
 			for (int i = 0; i < 4; ++i)
 			{
@@ -59,6 +61,6 @@ int main(void)
 
 		}	
 
-		k_msleep(100);  // adjust based on your measurement interval
+		k_msleep(100); 
 	}
 }
